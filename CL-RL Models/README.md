@@ -279,4 +279,4 @@ This project is released under the MIT License. See [LICENSE](../LICENSE) for de
 
 - Roger Nick Anaedevha - roger@robustidps.ai
 - Project: https://robustidps.ai
-- Repository: https://github.com/rogerpanel/CV/tree/main/continual_learning_ids
+- Repository: https://github.com/rogerpanel/CL-RL-Models/tree/main/CL-RL%20Models
