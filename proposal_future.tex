@@ -1,0 +1,337 @@
+% ══════════════════════════════════════════════════════════════════════════
+% Research Proposal: MambaShield-Driven Multi-Agent Defence with
+%                    Post-Quantum Traffic Awareness
+% ══════════════════════════════════════════════════════════════════════════
+\documentclass[12pt,a4paper]{article}
+
+% ── Fonts & encoding ────────────────────────────────────────────────────
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{mathpazo}
+\usepackage[scaled=0.88]{helvet}
+\usepackage{microtype}
+
+% ── Layout ──────────────────────────────────────────────────────────────
+\usepackage[top=25mm, bottom=25mm, left=28mm, right=28mm]{geometry}
+\usepackage{setspace}
+\onehalfspacing
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt}
+
+% ── Headers / footers ──────────────────────────────────────────────────
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0.4pt}
+\fancyhead[L]{\small\textit{Research Proposal II}}
+\fancyhead[R]{\small\textit{RobustIDPS.ai}}
+\fancyfoot[C]{\thepage}
+
+% ── Figures, maths, tables ─────────────────────────────────────────────
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,shapes.geometric,calc,fit}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{enumitem}
+\setlist[enumerate]{leftmargin=*, label=\arabic*.}
+
+% ── References & links ─────────────────────────────────────────────────
+\usepackage[colorlinks=true, linkcolor=blue!60!black,
+  citecolor=blue!60!black, urlcolor=blue!50!black]{hyperref}
+\usepackage[numbers,sort&compress]{natbib}
+
+% ── Custom commands ────────────────────────────────────────────────────
+\newcommand{\RobustIDPS}{\textsc{RobustIDPS.ai}}
+
+% ── Theorem-like environments ──────────────────────────────────────────
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}[section]
+\newtheorem{objective}{Objective}[section]
+
+% ═══════════════════════════════════════════════════════════════════════
+\begin{document}
+
+% ── Title page ─────────────────────────────────────────────────────────
+\begin{titlepage}
+\begin{center}
+\vspace*{2cm}
+{\LARGE\bfseries Research Proposal}\\[12pt]
+{\Large\bfseries MambaShield-Driven Multi-Agent Constrained\\[4pt]
+Reinforcement Learning for Post-Quantum-Aware\\[4pt]
+Distributed Network Defence}\\[30pt]
+{\large Roger Nick Anaedevha}\\[4pt]
+{\normalsize MSc Candidate, Institute of Cyber-Intelligent Systems (ICIS)\\
+National Research Nuclear University MEPhI\\
+Moscow, Russian Federation\\
+\texttt{roger@robustidps.ai}}\\[20pt]
+{\large Supervisor:}\\[4pt]
+{\normalsize Alexander Gennadievich Trofimov\\
+Associate Professor, Institute of Cyber-Intelligent Systems (ICIS)\\
+National Research Nuclear University MEPhI}\\[20pt]
+{\large Co-Supervisor:}\\[4pt]
+{\normalsize Yuri Vladimirovich Borodachev\\
+Department of Applied Mathematics\\
+National Research Nuclear University MEPhI}\\[30pt]
+{\normalsize Submitted in partial fulfilment of the requirements for the\\
+degree of Master of Science in Cybersecurity and Artificial Intelligence}\\[20pt]
+{\normalsize March 2026}
+\end{center}
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+% ═══════════════════════════════════════════════════════════════════════
+\section{Introduction}
+\label{sec:intro}
+
+Our preceding research programme~\cite{anaedevha2026cl_rl} established the first unified framework combining Elastic Weight Consolidation (EWC) with Constrained Policy Optimisation (CPO) for continual intrusion detection and autonomous response, achieving 96.9\% average accuracy with zero safety constraint violations across six benchmark datasets totalling 84.2~million flows. The framework was validated under distribution shift and adversarial conditions, demonstrating the viability of closed-loop detection-response systems. However, three limitations identified in that work motivate the present proposal.
+
+First, the detection backbone relies on a conventional multi-branch ensemble architecture. The MambaShield selective state-space model~\cite{anaedevha2026mambashield}, which we developed for poisoning-resilient sequential modelling, offers linear-time sequence processing that would enable real-time operation on high-throughput network links exceeding 10~Gbps. Integrating MambaShield as the shared feature extractor for both detection and policy networks would additionally protect the continual learning pipeline against adversarial contamination of the training data stream, a threat that regularisation-based methods such as EWC do not explicitly address.
+
+Second, post-quantum cryptography (PQC) standards are entering deployment. The NIST-standardised ML-KEM (formerly Kyber) and ML-DSA (formerly Dilithium) algorithms increase TLS handshake sizes by 10--30$\times$ and alter packet-level traffic patterns in ways that existing NIDS datasets do not capture. No dedicated PQC network traffic dataset exists for evaluating intrusion detection under these emerging encryption standards. We are currently constructing such datasets in a controlled testbed environment.
+
+Third, modern enterprise networks are inherently distributed, spanning multiple segments, cloud regions, and edge deployments. A single-agent defence policy cannot coordinate responses across these heterogeneous segments. Multi-agent constrained reinforcement learning (MA-CMDP) provides the mathematical framework for distributed coordination under safety constraints, yet it has never been applied to autonomous cyber defence.
+
+This proposal outlines a research programme that addresses all three extensions, building directly on the theoretical and practical foundations established in our prior work.
+
+% ═══════════════════════════════════════════════════════════════════════
+\section{Background and Motivation}
+\label{sec:background}
+
+\subsection{From EWC+CPO to MambaShield: Architectural Evolution}
+
+The unified Fisher Information framework in~\cite{anaedevha2026cl_rl} demonstrated that sharing the FIM computation between continual learning (knowledge preservation) and policy optimisation (trust-region constraints) improves both detection stability and response safety. However, the diagonal FIM approximation captures only marginal parameter importance. The MambaShield architecture~\cite{anaedevha2026mambashield} processes sequential input through selective state-space layers whose recurrent structure provides a natural foundation for richer importance estimation. Specifically, the state-space hidden state $h_t \in \mathbb{R}^N$ at time $t$ encodes a compressed summary of all prior inputs, and the sensitivity of this state to parameter perturbations can be computed efficiently through the adjoint method, yielding a structured FIM that captures temporal dependencies lost by the diagonal approximation.
+
+Furthermore, MambaShield's poisoning resilience, demonstrated against gradient-based and clean-label attacks in~\cite{anaedevha2026mambashield}, directly addresses a vulnerability of the EWC+Replay pipeline: if an adversary contaminates the training data stream, the experience replay buffer may store poisoned exemplars that persist across tasks. MambaShield's selective state gating mechanism provides an architectural defence against such contamination.
+
+\subsection{The Post-Quantum Traffic Landscape}
+
+The deployment of PQC standards introduces three measurable changes to network traffic patterns relevant to NIDS. First, ML-KEM key exchanges produce ciphertexts of 768--1568~bytes (compared with 32--256~bytes for ECDH), increasing TLS ClientHello and ServerHello sizes by an order of magnitude. Second, ML-DSA signatures are 2420--4627~bytes (versus 64--72~bytes for ECDSA), altering certificate chain transmission patterns. Third, hybrid PQC modes (e.g., X25519+ML-KEM-768) produce novel handshake structures not present in any existing NIDS training data. These changes affect the statistical features on which flow-based classifiers depend: packet size distributions, inter-arrival times, and byte volume ratios all shift under PQC. No existing benchmark dataset captures these effects.
+
+\subsection{Multi-Agent Defence as Distributed CMDP}
+
+Modern network architectures consist of multiple autonomous segments (perimeter, DMZ, internal, cloud workloads, IoT edge) that must coordinate defensive responses. A single-agent CMDP~\cite{altman1999constrained} as deployed in~\cite{anaedevha2026cl_rl} cannot model the partial observability, communication constraints, and credit assignment challenges inherent in distributed defence. The Multi-Agent Constrained MDP (MA-CMDP) formalism extends the single-agent case to $N$ cooperating agents with individual observations, shared safety constraints, and communication channels. The H-MARL approach of Singh~\textit{et~al.}~\cite{singh2025hmarl}, which achieved top performance in CAGE Challenge~4, provides a starting architecture, but it does not incorporate continual learning or safety constraints.
+
+% ═══════════════════════════════════════════════════════════════════════
+\section{Research Objectives}
+\label{sec:objectives}
+
+\begin{objective}[MambaShield Integration]
+\label{obj:mamba}
+Replace the seven-branch surrogate ensemble detection backbone with MambaShield as a shared feature extractor for both continual detection and policy networks, leveraging selective state-space layers for linear-time sequential processing and structured FIM computation.
+\end{objective}
+
+\begin{objective}[PQC Dataset Construction]
+\label{obj:pqc_data}
+Construct and publicly release a comprehensive PQC network traffic dataset containing both benign and malicious flows under ML-KEM, ML-DSA, and hybrid PQC modes, with at least 20 attack classes and 5~million flow records, suitable for evaluating NIDS under emerging encryption standards.
+\end{objective}
+
+\begin{objective}[PQC-Aware Detection]
+\label{obj:pqc_detect}
+Evaluate and adapt the MambaShield-based continual detection pipeline on PQC traffic, characterising the impact of PQC-specific feature distributions on classification accuracy, continual learning stability, and adversarial robustness.
+\end{objective}
+
+\begin{objective}[Multi-Agent Constrained Response]
+\label{obj:marl}
+Formulate distributed network defence as a Multi-Agent CMDP and train coordinated response policies via Multi-Agent CPO (MA-CPO), ensuring that global safety constraints (false-positive blocking rate $< 0.1\%$) are satisfied under decentralised execution with partial observability.
+\end{objective}
+
+\begin{objective}[Continual Multi-Agent Learning]
+\label{obj:cl_marl}
+Integrate continual learning into the multi-agent framework, enabling each agent to incrementally adapt to new attack distributions in its segment while preserving coordination protocols and safety constraints learned from prior deployment periods.
+\end{objective}
+
+\begin{objective}[End-to-End Deployment]
+\label{obj:deploy}
+Integrate all components into the \RobustIDPS{} production platform and demonstrate end-to-end operation across a multi-segment network testbed with live PQC-encrypted traffic.
+\end{objective}
+
+% ═══════════════════════════════════════════════════════════════════════
+\section{Methodology}
+\label{sec:method}
+
+The proposed system extends the architecture of~\cite{anaedevha2026cl_rl} in three directions: replacing the detection backbone with MambaShield, constructing PQC-specific datasets for evaluation, and extending the response module to multi-agent settings.
+
+\subsection{Module 1: MambaShield as Shared Backbone}
+
+The MambaShield architecture~\cite{anaedevha2026mambashield} processes a sequence of flow feature vectors $\mathbf{x}_1, \ldots, \mathbf{x}_T$ through selective state-space layers. Each layer maintains a hidden state $h_t \in \mathbb{R}^N$ governed by the discretised state-space equation:
+\begin{equation}
+h_t = \bar{A}\, h_{t-1} + \bar{B}\, x_t, \quad y_t = C\, h_t,
+\end{equation}
+where $\bar{A} = \exp(\Delta A)$ and $\bar{B} = (\Delta A)^{-1}(\exp(\Delta A) - I)\Delta B$ are the discretised state and input matrices, $\Delta$ is the learnable step size, and $C$ is the output matrix. The selective gating mechanism modulates $\Delta$ as a function of the input, enabling the model to selectively attend to security-relevant features while suppressing benign noise.
+
+For continual learning, the structured FIM is computed from the state-space parameters:
+\begin{equation}
+F_{ij}^{\mathrm{SSM}} = \mathbb{E}\left[\frac{\partial \log p_\theta(y|\mathbf{x}_{1:T})}{\partial \theta_i} \frac{\partial \log p_\theta(y|\mathbf{x}_{1:T})}{\partial \theta_j}\right],
+\end{equation}
+where the gradients flow through the recurrent state dynamics, capturing temporal importance that the diagonal FIM of~\cite{anaedevha2026cl_rl} cannot represent. This structured FIM simultaneously serves the continual learning penalty and the CPO trust region, extending the unified FIM framework to sequential architectures.
+
+\subsection{Module 2: PQC Dataset Construction}
+
+The PQC dataset will be generated in a controlled testbed comprising 50+ network devices communicating over TLS~1.3 with three PQC configurations: pure ML-KEM-768, pure ML-DSA-65, and hybrid X25519+ML-KEM-768. The testbed will simulate the same attack categories used in CIC-IoT-2023 (DDoS, DoS, Reconnaissance, Web-based, Brute Force, Spoofing, Mirai) plus PQC-specific attack vectors including downgrade attacks (forcing fallback from PQC to classical cryptography), oversized-handshake denial-of-service, and side-channel-assisted traffic analysis.
+
+Feature extraction will use the NFStream pipeline from \RobustIDPS{} extended with PQC-specific features: handshake byte ratio (PQC handshake bytes / total flow bytes), certificate chain size, key exchange round count, and hybrid mode indicator. The dataset will be released on Kaggle with DOI assignment for reproducibility.
+
+\subsection{Module 3: Multi-Agent Constrained Response}
+
+The distributed defence problem is formalised as a Dec-CMDP, a decentralised CMDP in which $N$ agents each observe a local state $o_i \in \mathcal{O}_i$ and select actions $a_i \in \mathcal{A}_i$ with access to a shared communication channel. The global state is the Cartesian product $s = (o_1, \ldots, o_N)$, and the global safety constraint requires:
+\begin{equation}
+J_C(\boldsymbol{\pi}) = \mathbb{E}_{\boldsymbol{\pi}}\left[\sum_{t=0}^{\infty} \gamma^t \sum_{i=1}^{N} C_i(o_i^t, a_i^t)\right] \leq \epsilon_{\mathrm{fp}},
+\end{equation}
+where $\boldsymbol{\pi} = (\pi_1, \ldots, \pi_N)$ denotes the joint policy and $C_i$ measures false-positive cost at agent $i$.
+
+Training uses Multi-Agent CPO (MA-CPO), which extends single-agent CPO via Centralised Training with Decentralised Execution (CTDE): during training, each agent's trust-region update has access to the global state and joint cost, while at deployment each agent executes its local policy conditioned only on its observation and inter-agent messages.
+
+Continual learning is integrated per-agent: each agent maintains its own EWC penalty with a structured FIM from its local MambaShield backbone. Coordination is preserved across task boundaries through a shared replay buffer of joint observation-action-cost tuples, ensuring that the communication protocols learned during previous deployment periods are not forgotten when individual agents adapt to new local attack distributions.
+
+% ═══════════════════════════════════════════════════════════════════════
+\section{Experimental Design}
+\label{sec:experiments}
+
+\subsection{Datasets}
+
+Three categories of datasets will be used, distinct from the six datasets employed in~\cite{anaedevha2026cl_rl}:
+\begin{enumerate}
+\item \textbf{PQC General Traffic (new, to be constructed):} PQC-encrypted network flows with 20+ attack classes across three PQC configurations, targeting 5+~million flow records.
+\item \textbf{PQC Cloud/Edge Traffic (new, to be constructed):} PQC-encrypted traffic in containerised microservice and industrial edge environments, capturing API-level and east-west communication patterns.
+\item \textbf{Multi-Segment Testbed Captures (new, to be constructed):} Live traffic from a multi-segment network (perimeter, DMZ, internal, cloud) with coordinated attack campaigns spanning multiple segments simultaneously.
+\end{enumerate}
+
+All datasets will be hosted on Kaggle with full documentation and DOI. Existing public benchmarks (CIC-IoT-2023, UNSW-NB15) will be used for backward compatibility evaluation but not as the primary evaluation corpus.
+
+\subsection{Evaluation Protocol}
+
+\subsubsection{MambaShield Backbone Evaluation}
+The MambaShield backbone will be compared against the seven-branch surrogate ensemble from~\cite{anaedevha2026cl_rl} on detection accuracy, inference latency, continual learning metrics (AA, BWT, FWT), and adversarial robustness under all six attack methods (FGSM, PGD, C\&W, DeepFool, Gaussian noise, label masking). The structured FIM will be compared against diagonal FIM on continual learning stability.
+
+\subsubsection{PQC-Aware Detection}
+Detection performance will be evaluated under three conditions: PQC-only traffic, mixed PQC/classical traffic, and PQC-to-classical downgrade scenarios. The key metric is whether the continual learning pipeline can adapt from classical traffic distributions (learned from existing benchmarks) to PQC distributions without catastrophic forgetting of classical attack signatures.
+
+\subsubsection{Multi-Agent Response}
+The MA-CPO agent will be evaluated in a four-segment simulated network using metrics: global threat mitigation rate, per-segment false-positive blocking rate, inter-agent communication overhead, coordination efficiency (fraction of multi-segment attacks requiring coordinated response), and global constraint violation rate.
+
+\subsection{Baselines}
+\begin{enumerate}
+\item \textbf{Detection:} Seven-branch ensemble~\cite{anaedevha2026stochastic}, NetMamba~\cite{wang2024netmamba}, standard Transformer.
+\item \textbf{Continual Learning:} EWC+Replay (from~\cite{anaedevha2026cl_rl}), SSF~\cite{zhang2025ssf}, SPIDER~\cite{amalapuram2024spider}.
+\item \textbf{Response:} Single-agent CPO (from~\cite{anaedevha2026cl_rl}), Independent PPO (no coordination), MAPPO (unconstrained multi-agent).
+\end{enumerate}
+
+% ═══════════════════════════════════════════════════════════════════════
+\section{Expected Outcomes}
+\label{sec:outcomes}
+
+\begin{enumerate}
+\item The MambaShield backbone is expected to match or exceed the seven-branch ensemble on detection accuracy while providing 5--10$\times$ inference speedup through linear-time state-space computation, enabling real-time operation on 10+~Gbps network links.
+
+\item The structured FIM from MambaShield is expected to reduce backward transfer (forgetting) by an additional 30--50\% compared with the diagonal FIM in~\cite{anaedevha2026cl_rl}, by capturing temporal parameter dependencies.
+
+\item The PQC dataset will be the first publicly available benchmark for evaluating NIDS under post-quantum encryption, filling a critical gap identified in our literature review.
+
+\item The MA-CPO agent is expected to achieve a global threat mitigation rate above 95\% with zero global constraint violations, while reducing response latency for multi-segment attacks by 30--40\% compared with independent single-agent policies through coordinated escalation.
+
+\item The continual multi-agent framework is expected to maintain coordination effectiveness within 3 percentage points of fully retrained multi-agent policies while requiring less than 15\% of the computational cost.
+\end{enumerate}
+
+% ═══════════════════════════════════════════════════════════════════════
+\section{Timeline}
+\label{sec:timeline}
+
+\begin{table}[h]
+\centering
+\begin{tabularx}{\textwidth}{lXr}
+\toprule
+\textbf{Phase} & \textbf{Activities} & \textbf{Duration} \\
+\midrule
+1. PQC Testbed & Testbed construction; PQC traffic generation; feature extraction; dataset validation and Kaggle release & Months 1--3 \\
+2. MambaShield CL & MambaShield integration; structured FIM implementation; CL pipeline adaptation; benchmark evaluation & Months 3--5 \\
+3. PQC Evaluation & PQC-aware detection; classical-to-PQC continual adaptation; adversarial robustness under PQC & Months 5--6 \\
+4. MA-CMDP Design & Dec-CMDP formulation; multi-segment simulation; MA-CPO implementation & Months 6--8 \\
+5. Continual MARL & Per-agent CL integration; shared replay buffer; coordination preservation experiments & Months 8--9 \\
+6. Integration & End-to-end deployment on \RobustIDPS{}; multi-segment live testbed; paper writing & Months 9--10 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+% ═══════════════════════════════════════════════════════════════════════
+\section{Resource Requirements}
+\label{sec:resources}
+
+\begin{enumerate}
+\item \textbf{Compute:} Two Hetzner dedicated GPU servers (NVIDIA A100 or H100) for MA-CPO training and PQC dataset generation. The multi-agent training is expected to require approximately 4$\times$ the single-agent compute budget from~\cite{anaedevha2026cl_rl}.
+
+\item \textbf{Network Testbed:} A multi-segment network comprising at least four subnets (perimeter, DMZ, internal, cloud-simulated) with PQC-enabled TLS~1.3 endpoints. This can be virtualised using Docker/Kubernetes with OpenSSL~3.2+ PQC support.
+
+\item \textbf{Data:} PQC datasets (to be constructed, targeting 10+~million flows total across PQC General and PQC Cloud/Edge). Existing CIC-IoT-2023, UNSW-NB15 for backward compatibility.
+
+\item \textbf{Software:} PyTorch~2.x, Stable-Baselines3 with Safety Gymnasium, Mamba-SSM library, PQClean reference implementations (ML-KEM, ML-DSA), NFStream, FastAPI, React.
+\end{enumerate}
+
+% ═══════════════════════════════════════════════════════════════════════
+\section{Ethical Considerations}
+\label{sec:ethics}
+
+All considerations from~\cite{anaedevha2026cl_rl} apply: mitigation actions are logged, auditable, and reversible; false-positive penalties are asymmetric; shadow mode precedes enforcement. Additional considerations for this proposal include: the PQC dataset will not contain real user traffic---all flows are synthetically generated in a controlled testbed; the multi-agent coordination mechanism includes a global kill switch that reverts all agents to passive monitoring; and the PQC attack vectors (downgrade, oversized-handshake DoS) are evaluated only in the testbed environment and are not deployed against production systems.
+
+% ═══════════════════════════════════════════════════════════════════════
+\section{Conclusion}
+\label{sec:conclusion}
+
+This proposal outlines the next phase of the \RobustIDPS{} research programme, extending the continual-learning and constrained-RL framework of~\cite{anaedevha2026cl_rl} in three complementary directions. MambaShield integration provides architectural efficiency and poisoning resilience. Post-quantum traffic datasets address the most pressing blind spot in the NIDS research landscape as PQC deployment accelerates. Multi-agent constrained RL enables coordinated defence across the distributed network segments that characterise modern enterprise architectures. Together, these extensions will advance \RobustIDPS{} from a single-segment closed-loop system to a distributed, PQC-aware, self-healing network defence infrastructure.
+
+% ═══════════════════════════════════════════════════════════════════════
+\bibliographystyle{IEEEtranN}
+\begin{thebibliography}{15}
+
+\bibitem{anaedevha2026cl_rl}
+R.~N.~Anaedevha, A.~G.~Trofimov, and Y.~V.~Borodachev,
+``Continual learning and constrained reinforcement learning for adversarially robust network intrusion detection and autonomous response,''
+submitted to \emph{IEEE Trans. Neural Netw. Learn. Syst.}, 2026.
+
+\bibitem{anaedevha2026stochastic}
+R.~N.~Anaedevha and A.~G.~Trofimov,
+``Stochastic multimodal transformer with uncertainty quantification for robust network intrusion detection,''
+in \emph{Proc. Int. Conf. Neuroinformatics}, Cham: Springer, 2025, pp.~428--447.
+
+\bibitem{anaedevha2026mambashield}
+R.~N.~Anaedevha, A.~G.~Trofimov, and Y.~V.~Borodachev,
+``{MambaShield}: Selective state-space models for poisoning-resilient sequential modelling,''
+\emph{Expert Syst. Appl.}, p.~131175, 2026.
+
+\bibitem{anaedevha2026gp}
+R.~N.~Anaedevha, A.~G.~Trofimov, and Y.~V.~Borodachev,
+``Uncertainty-calibrated hierarchical {G}aussian processes for intrusion detection with multi-scale temporal modeling,''
+\emph{Neurocomputing}, p.~133105, 2026, doi: 10.1016/j.neucom.2026.133105.
+
+\bibitem{altman1999constrained}
+E.~Altman,
+\emph{Constrained Markov Decision Processes}.
+Chapman \& Hall/CRC, 1999.
+
+\bibitem{singh2025hmarl}
+M.~Singh \textit{et~al.},
+``Hierarchical multi-agent reinforcement learning for cyber network defense,''
+in \emph{Proc. RLC}, 2025.
+
+\bibitem{wang2024netmamba}
+J.~Wang \textit{et~al.},
+``{NetMamba}: Efficient network traffic classification via pre-training unidirectional {Mamba},''
+in \emph{Proc. IEEE ICNP}, 2024.
+
+\bibitem{zhang2025ssf}
+M.~Zhang, H.~Wang, Y.~Li, and Z.~Chen,
+``Continual learning with strategic selection and forgetting for network intrusion detection,''
+in \emph{Proc. IEEE INFOCOM}, 2025.
+
+\bibitem{amalapuram2024spider}
+S.~K.~Amalapuram, S.~Vemireddy, R.~Tammana, and B.~R.~Tamma,
+``{SPIDER}: A semi-supervised continual learning-based network intrusion detection system,''
+in \emph{Proc. IEEE INFOCOM}, 2024.
+
+\end{thebibliography}
+
+\end{document}
